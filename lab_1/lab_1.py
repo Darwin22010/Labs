@@ -1,102 +1,152 @@
-import numpy as np
+import copy
+from sympy import *
+def matrixmult(A, B):
+    C = [[0.0 for col in range(len(B[0]))] for row in range(len(A))]
+    for i in range(len(A)):
+        for j in range(len(B[0])):
+            for k in range(len(B)):
+                C[i][j] += A[i][k]*B[k][j]
+    return C
 
-def matrix_creat():
-    matrix = []
-    print(f"Введите матрицу размерности {n} по строчно и по символьно")
-    for i in range(n):          
-        a =[]
-        for j in range(n):      
-          a.append(int(input()))
-        matrix.append(a)
-    return(matrix)
+def pivot_matrix(M):
+    m = len(M)
+    MCopy = copy.deepcopy(M)
+                                                                                                                                                                                               
+    id_mat = [[float(i==j) for i in range(m)] for j in range(m)]
+    row_exchanges = 0
+                                                                                                                                                                                              
+    for i in range(m):
+        maxElem = abs(MCopy[i][i])
+        maxRow = i
+        for k in range(i+1, m):
+            if(abs(MCopy[k][i]) > maxElem):
+                maxElem = abs(MCopy[k][i]) 
+                maxRow = k
+        if i != maxRow:                                                                                                                                                                                                                          
+            id_mat[i], id_mat[maxRow] = id_mat[maxRow], id_mat[i]
+            MCopy[i], MCopy[maxRow] = MCopy[maxRow], MCopy[i]
+            row_exchanges += 1
 
-def vector_creat():
-    print(f"Введите вектор длины {n} по строчно и по символьно")
-    vector = []
+    return id_mat, row_exchanges
+
+def lup_decomposition(A):
+    
+    n = len(A)
+                                                                                                                                                                                                               
+    L = [[0.0] * n for i in range(n)]
+    U = [[0.0] * n for i in range(n)]
+
+                                                                                                                                                                                           
+    P, rowExc = pivot_matrix(A)
+    PA = matrixmult(P, A)
+                                                                                                                                                                                                                     
+    for j in range(n):
+                                                                                                                                                                                                
+        L[j][j] = 1.0
+
+                                                                                                                                                                                      
+        for i in range(j+1):
+            s = sum(L[i][k] * U[k][j] for k in range(i))
+            U[i][j] = PA[i][j] - s
+
+        for i in range(j, n):
+            s = sum(L[i][k] * U[k][j] for k in range(j))
+            L[i][j] = (PA[i][j] - s) / U[j][j]
+
+    return (P, L, U, rowExc)
+
+def lup_solve(P,L,U,B):
+    n = len(P)
+
+    Bt = matrixmult(P, [[i] for i in B])
+
+    Y = [0.0 for i in range(n)]
     for i in range(n):
-        vector.append(int(input()))
-    return(vector)
+        Y[i] = Bt[i][0]/L[i][i]
+        for k in range(i):
+            Y[i] -= Y[k]*L[i][k]
 
-def matrix_print(matrix):
+    X = [0.0 for i in range(n)]
+    for i in range(n-1,-1,-1):
+        s = sum(X[k]*U[i][k] for k in range(i+1,n))
+        X[i] = (Y[i] - s)/U[i][i]
+
+    return X
+
+def lup_invert(P,L,U):
+    n = len(P)
+
+    IA = [[float(i==j) for i in range(n)] for j in range(n)]
+    for i in range(n) :
+        b = [IA[i][k] for k in range(n)]
+        IA[i] = lup_solve(P,L,U,b)
     for i in range(n):
-        for j in range(n):
-            print("%.0f" % matrix[i][j], end = " ")
-        print()
-    return
+        for j in range(i):
+            IA[i][j],IA[j][i] = IA[j][i],IA[i][j]
 
-def vector_print(vector):
-    for i in range(n):
-            print("%.0f" % vector[i], end = " ")
-            print()
-    return
+    return IA
 
-def multiplication_matrix(matrix1, matrix2):
-    R = []
-    for i in range(n):          
-        a =[]
-        for j in range(n):      
-          a.append(0)
-        R.append(a)
-    for i in range(n):
-        for j in range(n):
-            for k in range(n):
-                R[i][j] += matrix1[i][k] * matrix2[k][j]
-    return R
+def lup_determinant(U, rowExc):
+    n = len(U[0])
 
-def multiplication_vector(matrix1, vector):
-    R = []
-    for i in range(n):               
-          R.append(0)
-    for i in range(n):
-            for k in range(n):
-                R[i] += matrix1[i][k] * vector[k]
-    return R
+    det = U[0][0]
+    for j in range(1,n):
+        det *= U[j][j]
 
-def determination_matrix(matrix):
-    det = np.linalg.det(matrix)
+    det *= (-1)**rowExc
+
     return det
+	
+def main():
+    print("Matrix A:")
+    A = []
+    A.append([int(j) for j in input().strip().split(" ")])
+    for i in range(1,len(A[0])) :
+        A.append([int(j) for j in input().strip().split(" ")])
 
-def inversion_matrix(matrix):
-    inverse_matrix = np.linalg.inv(matrix)
-    return inverse_matrix
+    K = [[0.0 for col in range(len(A[0]))] for row in range(len(A))]
 
-n = int(input("Введите размерность матриц:"))
+    print("Vector b:")
+    b = [int(j) for j in input().strip().split(" ")]
 
-matrix = np.array([[3.8, 6.7, -1.2, 5.2], 
-                   [6.4, 1.3, -2.7, 3.8], 
-                   [2.4, -4.5, 3.5, -0.6]])
-def make_identity(matrix):
-    # перебор строк в обратном порядке
-    for nrow in range(len(matrix)-1,0,-1):
-        row = matrix[nrow]
-        for upper_row in matrix[:nrow]:
-            factor = upper_row[nrow]
-            upper_row -= factor*row
-    return matrix
+    P, L, U, rowExc = lup_decomposition(A)
+    print("Matrix P:")
+    for i in range(len(P)):
+        for j in range(len(P)):
+            K[i][j] = (format(P[i][j], '.3f'))
+    for elem in K:
+        print(elem)
 
-def gaussPivotFunc(matrix):
-    for nrow in range(len(matrix)):
-        # nrow равен номеру строки
-        # np.argmax возвращает номер строки с максимальным элементом в уменьшенной матрице
-        # которая начинается со строки nrow. Поэтому нужно прибавить nrow к результату
-        pivot = nrow + np.argmax(abs(matrix[nrow:, nrow]))
-        if pivot != nrow:
-            # swap
-            # matrix[nrow], matrix[pivot] = matrix[pivot], matrix[nrow] - не работает.
-            # нужно переставлять строки именно так, как написано ниже
-            matrix[[nrow, pivot]] = matrix[[pivot, nrow]]
-        row = matrix[nrow]
-        divider = row[nrow] # диагональный элемент
-        if abs(divider) < 1e-10:
-            # почти нуль на диагонали. Продолжать не имеет смысла, результат счёта неустойчив
-            raise ValueError(f"Матрица несовместна. Максимальный элемент в столбце {nrow}: {divider:.3g}")
-        # делим на диагональный элемент.
-        row /= divider
-        # теперь надо вычесть приведённую строку из всех нижележащих строчек
-        for lower_row in matrix[nrow+1:]:
-            factor = lower_row[nrow] # элемент строки в колонке nrow
-            lower_row -= factor*row # вычитаем, чтобы получить ноль в колонке nrow
-    # приводим к диагональному виду
-    make_identity(matrix)
-    return matrix
-print(gaussPivotFunc(matrix))
+    print("Matrix L:")
+    for i in range(len(L)):
+        for j in range(len(L)):
+            K[i][j] = (format(L[i][j], '.3f'))
+    for elem in K:
+        print(elem)
+
+    print("Matrix U:")
+    for i in range(len(U)):
+        for j in range(len(U)):
+            K[i][j] = (format(U[i][j], '.3f'))
+    for elem in K:
+        print(elem)
+        
+    x = lup_solve(P,L,U,b)
+    print("X:")
+    for j in range(len(x)):
+        x[j] = (format(x[j], '.3f'))
+    print(x)
+
+    IA = lup_invert(P,L,U)
+    print("Inverted A:")
+    for i in range(len(IA)):
+        for j in range(len(IA)):
+            K[i][j] = (format(IA[i][j], '.3f'))
+    for elem in K:
+        print(elem)
+
+    detA = lup_determinant(U, rowExc)
+    print("Determinant of A: %d" % detA)
+	
+if __name__ == '__main__':
+		main()
