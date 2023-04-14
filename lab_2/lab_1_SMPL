@@ -1,0 +1,35 @@
+import copy, math, cmath
+
+def SimpleIter(f, x, q, eps):
+	it = 0
+	while True:
+		prev_x = x
+		x = f(x)
+
+		it += 1
+
+		if float(q) * abs(x - prev_x) / (1 - q) <= eps:
+			return x, it
+	
+
+def phi(x):
+	return (math.sqrt(math.log(x+2)))
+
+def dphidx(x):
+	return 1/((2*x+4)*math.sqrt(math.log(x+2))**0.5)
+
+	
+def main():
+		
+	print("Epsilon:")
+	eps = float(input())
+	q = abs(dphidx(1))
+	
+	x, it = SimpleIter(phi, 0.69, q, eps)
+	print("X:")
+	print(x) 
+	print("Number of iterations:")
+	print(it)
+
+if __name__ == '__main__':
+		main()
